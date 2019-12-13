@@ -1,0 +1,58 @@
+AWSTemplateFormatVersion: 2010-09-09
+Resources:
+    LambdaExecutionRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                  - Effect: Allow
+                    Principal:
+                        Service: [lambda.amazonaws.com]
+                    Action: ['sts:AssumeRole']
+            Policies:
+                - PolicyName: root
+                  PolicyDocument:
+                    Version: 2012-10-17
+                    Statement:
+                      - Effect: Allow
+                        Action: ['logs:CreateLogGroup']
+                        Resource: 'arn:aws:logs:us-east-2:752162590312:*'
+                      - Effect: Allow
+                        Action: ['logs:CreateLogStream','logs:PutLogEvents']
+                        Resource: 'arn:aws:logs:us-east-2:752162590312:log-group:/aws/lambda/dxc-tst1:*'
+                      - Effect: Allow
+                        Action: ['ssm:DescribeParameters']
+                        Resource: '*'
+                      - Effect: Allow
+                        Action: ['ssm:GetParameter','ssm:GetParameters']
+                        Resource: 'arn:aws:ssm:us-east-2:752162590312:parameter/UserName'
+                      - Effect: Allow
+                        Action: ['s3:PutObject']
+                        Resource: 'arn:aws:s3:::dxc-exercise/*'
+    exerciseLambda:
+        Type: AWS::Lambda::Function
+        Properties:
+            Code:
+                ZipFile: |
+                    import boto3
+                    import json
+                    
+                    def handler(event, context):
+                        ssm_client = boto3.client('ssm')
+                        response = ssm_client.get_parameter(
+                                    Name='UserName'
+                                    )
+                        data = {"Name":response['Parameter']['Name'],
+                        "Value":response['Parameter']['Value']
+                                }
+                        s3_client = boto3.client('s3')
+                        s3_client.put_object(Body=bytes(json.dumps(data).encode('UTF-8')), Bucket='dxc-exercise', Key='params.txt')
+                        print(response)
+                        return {'statusCode': 200,
+                                'body': json.dumps('Hello from Lambda!')
+                                }
+            Handler: index.handler
+            Runtime: python3.7
+            Role: !GetAtt LambdaExecutionRole.Arn
+    

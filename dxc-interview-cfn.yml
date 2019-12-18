@@ -20,7 +20,7 @@ Resources:
                         Resource: 'arn:aws:logs:us-east-2:752162590312:*'
                       - Effect: Allow
                         Action: ['logs:CreateLogStream','logs:PutLogEvents']
-                        Resource: 'arn:aws:logs:us-east-2:752162590312:log-group:/aws/lambda/dxc-tst1:*'
+                        Resource: 'arn:aws:logs:us-east-2:752162590312:log-group:/aws/lambda/exercise-lambda:*'
                       - Effect: Allow
                         Action: ['ssm:DescribeParameters']
                         Resource: '*'
@@ -30,9 +30,10 @@ Resources:
                       - Effect: Allow
                         Action: ['s3:PutObject']
                         Resource: 'arn:aws:s3:::dxc-exercise/*'
-    exerciseLambda:
+    dxcexerciseLambda:
         Type: AWS::Lambda::Function
         Properties:
+            FunctionName: exercise-lambda
             Code:
                 ZipFile: |
                     import boto3
@@ -55,4 +56,3 @@ Resources:
             Handler: index.handler
             Runtime: python3.7
             Role: !GetAtt LambdaExecutionRole.Arn
-    
